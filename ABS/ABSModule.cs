@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using UnityEngine;
 
@@ -16,6 +18,8 @@ namespace ABS
         String currentText = "0.1";
         double currentRate = 0.1;
         protected Rect windowPos;
+        private static Texture2D texture;
+        private ApplicationLauncherButton brakeButton;
 
         //IButton btn;
 
@@ -42,11 +46,29 @@ namespace ABS
             print("ABS: Hello Kerbin!");
             //btn = InitButton();
 
+            if (texture == null)
+            {
+                texture = new Texture2D(36, 36, TextureFormat.RGBA32, false);
+                texture.LoadImage(File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "StockToolbar.png")));
+            }
 
             if ((windowPos.x == 0) && (windowPos.y == 0))
             {
-                windowPos = new Rect(Screen.width / 2, Screen.height / 2, 50, 10);
+                windowPos = new Rect(Screen.width / 2, Screen.height / 2, 100, 10);
             }
+
+            if (this.brakeButton == null && HighLogic.LoadedScene == GameScenes.FLIGHT)
+            {
+                this.brakeButton = ApplicationLauncher.Instance.AddModApplication(
+                    this.Activate,
+                    this.Deactivate,
+                    null,
+                    null,
+                    null,
+                    null,
+                    ApplicationLauncher.AppScenes.ALWAYS,
+                    texture);
+            } 
         }
 
         public override void OnFixedUpdate()
@@ -83,11 +105,13 @@ namespace ABS
                     if (runUntilStop)
                     {
                         print("ABS UNTOGGLE");
-                        Deactivate();
+                        this.brakeButton.SetFalse();
+                        //Deactivate();
                     }
                     else
                     {
-                        Activate();
+                        this.brakeButton.SetTrue();
+                        //Activate();
 
                     }
                 }
@@ -136,7 +160,8 @@ namespace ABS
             {
                 print("ABS: TOO SLOW");
                 //print("ABS: SPEED: " + vessel.GetSrfVelocity().magnitude.ToString());
-                Deactivate();
+                this.brakeButton.SetFalse();
+                //Deactivate();
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
             }
         }
